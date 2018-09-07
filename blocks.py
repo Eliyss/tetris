@@ -1,5 +1,4 @@
-from PyQt5.q
-
+import random
 class Shape(object):
     shapeCoords =   (
         ((0, 0),    (0, 0),     (0, 0),     (0, 0)),
@@ -24,7 +23,7 @@ class Shape(object):
 
 
     def __init__(self):
-        self.shape = empty
+        self.shape = self.empty
         self.coords = [[0, 0] for i in range(4)]
 
 
@@ -33,7 +32,7 @@ class Shape(object):
     
     def setShape(self, shape):
         self.shape = shape
-        coords = shapeCoords[shape]
+        coords = self.shapeCoords[shape]
         for i in range(4):
             for j in range(2):
                 self.coords[i][j] = coords[i][j]
@@ -56,10 +55,25 @@ class Shape(object):
     def rotateRight(self):
         if self.shape == O:
             return self
-        else if self.shap
 
         rotated = block()
         rotated.shape = self.shape
 
         for i in range(4):
-            rotated.
+            rotated.setX(i, self.getY(i))
+            rotated.setY(i, -self.getX(i))
+        
+        return rotated
+
+    def rotateLeft(self):
+        if self.shape == O:
+            return self
+
+        rotated = block()
+        rotated.shape = self.shape
+
+        for i in range(4):
+            rotated.setX(i, -self.getY(i))
+            rotated.setY(i, self.getX(i))
+        
+        return rotated
