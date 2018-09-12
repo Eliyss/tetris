@@ -8,10 +8,11 @@ import blocks
 # we want a pause, play, hold/swap, next shape, score, rotate bounce
 
 class board(QFrame):
+    msg2Statusbar = pyqtSignal(str)
     boardWidth = 10
     boardHeight = 22
     tickRate = 500
-    squareSize = 50
+    squareSize = 10
 
     def __init__(self, parent):
         super().__init__(parent)
@@ -31,11 +32,11 @@ class board(QFrame):
         self.timer = QBasicTimer()
 
     def keyPressEvent(self, event):
-        if not self.isStarted or self.currentPiece.shape() == blocks.empty:
+        if not self.isStarted or self.currentShape.shape() == blocks.Shape.empty:
             super(board, self).keyPressEvent(event)
             return
 
-        key = event.key()
+        key = event.key()   
         
         if key == Qt.Key_P:
             self.pause()
@@ -80,7 +81,7 @@ class board(QFrame):
         self.totalLinesCleared = 0
         self.resetBoard()
 
-       # self.msg2Statusbar.emit(str(self.numLinesRemoved))
+        self.msg2Statusbar.emit(str(self.totalLinesCleared))
 
         self.spawnShape()
         self.timer.start(board.tickRate, self)
@@ -94,18 +95,18 @@ class board(QFrame):
         
         if self.isPaused:
             self.timer.stop()
- #           self.msg2Statusbar.emit("paused")
+            self.msg2Statusbar.emit("paused")
             
         else:
             self.timer.start(board.tickRate, self)
-#            self.msg2Statusbar.emit(str(self.totalLinesCleared))
+            self.msg2Statusbar.emit(str(self.totalLinesCleared))
 
         self.update()
     
     def resetBoard(self):
         self.squareGrid = []
         for i in range(220):
-            self.squareGrid.append(0)
+            self.squareGrid.append(blocks.Shape.empty)
       
 
     def getShapeAt(self, x, y):
@@ -132,7 +133,7 @@ class board(QFrame):
 
             if x < 0 or x > 9 or y < 0 or y > 21:
                 return False
-            if self.getShapeAt(x, y) != blocks.empty:
+            if self.getShapeAt(x, y) != blocks.Shape.empty:
                 return False
             
         self.currentShape = shape
@@ -143,7 +144,7 @@ class board(QFrame):
         return True
     
     def downOne(self):
-        if not self.placeBlock(self.curPiece, self.curX, self.curY - 1):
+        if not self.placeBlock(self.currentShape, self.currentX, self.currentY - 1):
             self.reachedBottom()
 
     def smash(self):
@@ -174,7 +175,7 @@ class board(QFrame):
         for i in range(20):
             full = True
             for j in range(10):
-                if self.getShapeAt(j, i) == blocks.empty:
+                if self.getShapeAt(j, i) == blocks.Shape.empty:
                     full = False
 
             if full:
@@ -189,7 +190,7 @@ class board(QFrame):
         if linesCleared > 0:
             self.totalLinesCleared += linesCleared
             self.clearingLines = True
-            self.currentShape.setShape(blocks.empty)
+            self.currentShape.setShape(blocks.Shape.empty)
             self.update()
 
 
@@ -198,15 +199,15 @@ class board(QFrame):
                   0xCCCC66, 0xCC66CC, 0x66CCCC, 0xDAAA00]
         
         color = QColor(colors[shape])
-        painter.fillRect(x+1, y+1, 48, 48, color)
+        painter.fillRect(x+1, y+1, squareSize-2, squareSize-2, color)
 
         painter.setPen(color.lighter)
-        painter.drawLine(x, y, x, y+50)
-        painter.drawLine(x, y+50, x+50, y+50)
+        painter.drawLine(x, y, x, y+board.squareSize-1)
+        painter.drawLine(x, y+board.squareSize-1, x+board.squareSize-1, y+board.squareSize-1)
 
         painter.setPen(color.darker)
-        painter.drawLine(x, y, x+50, y)
-        painter.drawLine(x+50, y, x+50, y+50)
+        painter.drawLine(x, y, x+board.squareSize-1, y)
+        painter.drawLine(x+board.squareSize-1, y, x+board.squareSize-1, y+board.squareSize-1)
 
     def drawBox(self, painter, x, y):
         color = QColor(0xFFFFFF)
@@ -219,19 +220,50 @@ class board(QFrame):
 
     def updateBoard(self, event):
         painter = QPainter(self)
+        rect = self.contentsRect()
+        
         for i in range(22):
             for j in range(10):
                 shape = self.getShapeAt(j, i)
 
-                if shape == blocks.empty:
+                if shape == blocks.Shape.empty:
                     self.drawBox(painter, j*50, i*50)
                 else:
                     self.drawSquare(painter, j*50, i*50, shape)
 
-        if self.currentShape.shape() != board.empty:
+        if self.currentShape.shape() != blocks.Shape.empty:
             for i in range(4):
                 x = self.currentX + self.currentShape.getX(i)
                 y = self.currentY + self.currentShape.getY(i)
                 self.drawSquare(painter, x*50, y*50, self.currentShape.shape)
+
+    def paintEvent(self, event):
+
+        painter = QPainter(self)
+        rect = self.contentsRect()
+
+        boardTop = rect.bottom() - Board.BoardHeight * self.squareHeight()
+
+        for i in range(Board.BoardHeight):
+            for j in range(Board.BoardWidth):
+                shape = self.shapeAt(j, Board.BoardHeight - i - 1)
+                
+                if shape != Tetrominoe.NoShape:
+                    self.drawSquare(painter,
+                        rect.left() + j * self.squareWidth(),
+                        boardTop + i * self.squareHeight(), shape)
+
+        if self.curPiece.shape() != Tetrominoe.NoShape:
+            
+            for i in range(4):
+                
+                x = self.curX + self.curPiece.x(i)
+                y = self.curY - self.curPiece.y(i)
+                self.drawSquare(painter, rect.left() + x * self.squareWidth(),
+                    boardTop + (Board.BoardHeight - y - 1) * self.squareHeight(),
+                    self.curPiece.shape())
+
+
+                
 
                     

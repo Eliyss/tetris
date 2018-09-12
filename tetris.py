@@ -20,11 +20,11 @@ class Tetris(QMainWindow):
         self.setCentralWidget(self.tboard)
 
         self.statusbar = self.statusBar()        
-        #self.tboard.msg2Statusbar[str].connect(self.statusbar.showMessage)
+        self.tboard.msg2Statusbar[str].connect(self.statusbar.showMessage)
         
         self.tboard.start()
         
-        self.resize(180, 380)
+        self.resize(300, 300)
         self.center()
         self.setWindowTitle('Tetris')        
         self.show()
